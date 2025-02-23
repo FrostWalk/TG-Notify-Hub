@@ -1,0 +1,14 @@
+{
+  "token": "",
+  "chat_id": 0,
+  "port": 8080,
+  "healthcheck_uuid": "",
+  "ping_interval": 0,
+  "auth_header": "",
+  "auth_token": "",
+  "topics": [
+    {
+      "name": ""
+    }
+  ]
+}
