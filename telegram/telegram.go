@@ -39,8 +39,9 @@ func SendMessageToGeneral(chatID int64, message string) error {
 
 	// Construct the parameters for sending a message.
 	params := &telego.SendMessageParams{
-		ChatID: telego.ChatID{ID: chatID},
-		Text:   message,
+		ChatID:    telego.ChatID{ID: chatID},
+		Text:      message,
+		ParseMode: "MarkdownV2",
 	}
 
 	// Send the message using the telego API.
@@ -71,7 +72,7 @@ func CreateTopics(topics []config.Topic, chatId int64) ([]config.Topic, error) {
 		}
 		// Save the message thread ID associated with the topic.
 		topics[i].Id = resp.MessageThreadID
-		topics[i].Slug = url.PathEscape(topic.Name)
+		topics[i].Slug = url.QueryEscape(topic.Name)
 	}
 	return topics, nil
 }

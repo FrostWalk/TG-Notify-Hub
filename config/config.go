@@ -28,8 +28,8 @@ var (
 	instance *AppConfig
 	// mu protects access to instance.
 	mu sync.RWMutex
-	// slugChatIds contains the association between slugs and chat ids
-	slugChatIds sync.Map
+	// topicNameChatIds contains the association between slugs and chat ids
+	topicNameChatIds sync.Map
 )
 
 // Load attempts to read the configuration from the provided file path.
@@ -82,7 +82,7 @@ func Load(path string) error {
 	mu.Unlock()
 
 	for _, topic := range cfg.Topics {
-		slugChatIds.Store(topic.Slug, topic.Id)
+		topicNameChatIds.Store(topic.Name, topic.Id)
 	}
 
 	return nil
@@ -99,9 +99,9 @@ func saveConfig(path string) error {
 	return os.WriteFile(path, data, 0644)
 }
 
-// Config returns a copy of the current configuration.
+// Loaded returns a copy of the current configuration.
 // All parts of the application can use this to access the fields.
-func Config() *AppConfig {
+func Loaded() *AppConfig {
 	mu.RLock()
 	defer mu.RUnlock()
 	return instance
@@ -111,8 +111,16 @@ func UpdateTopics(t []Topic, f string) error {
 	instance.Topics = t
 
 	for _, topic := range t {
-		slugChatIds.Store(topic.Slug, topic.Id)
+		topicNameChatIds.Store(topic.Name, topic.Id)
 	}
 
 	return saveConfig(f)
+}
+
+func GetIdFromName(name string) (bool, int) {
+	id, ok := topicNameChatIds.Load(name)
+	if !ok {
+		return false, -1
+	}
+	return ok, id.(int)
 }
