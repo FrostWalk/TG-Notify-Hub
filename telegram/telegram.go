@@ -3,6 +3,7 @@ package telegram
 import (
 	"errors"
 	"github.com/mymmrac/telego"
+	"math/rand"
 	"net/url"
 	"sync"
 	"tgnotifyhub/config"
@@ -39,8 +40,9 @@ func SendMessageToGeneral(chatID int64, message string) error {
 
 	// Construct the parameters for sending a message.
 	params := &telego.SendMessageParams{
-		ChatID: telego.ChatID{ID: chatID},
-		Text:   message,
+		ChatID:    telego.ChatID{ID: chatID},
+		Text:      message,
+		ParseMode: "MarkdownV2",
 	}
 
 	// Send the message using the telego API.
@@ -62,8 +64,9 @@ func CreateTopics(topics []config.Topic, chatId int64) ([]config.Topic, error) {
 		// Note: The method CreateForumTopic is available in the newer Telegram Bot API.
 		// If the topic already exists, the API may return an error; you can decide how to handle that.
 		resp, err := bot.CreateForumTopic(&telego.CreateForumTopicParams{
-			ChatID: telego.ChatID{ID: chatId},
-			Name:   topic.Name,
+			ChatID:    telego.ChatID{ID: chatId},
+			Name:      topic.Name,
+			IconColor: randomColor(),
 		})
 
 		if err != nil {
@@ -71,7 +74,7 @@ func CreateTopics(topics []config.Topic, chatId int64) ([]config.Topic, error) {
 		}
 		// Save the message thread ID associated with the topic.
 		topics[i].Id = resp.MessageThreadID
-		topics[i].Slug = url.PathEscape(topic.Name)
+		topics[i].Slug = url.QueryEscape(topic.Name)
 	}
 	return topics, nil
 }
@@ -87,4 +90,10 @@ func SendMessageToTopic(chatId int64, topicId int, message string) error {
 	})
 
 	return err
+}
+
+func randomColor() int {
+	const size = 6
+	var colors = [size]int{7322096, 16766590, 13338331, 9367192, 16749490, 16478047}
+	return colors[rand.Intn(size)]
 }
