@@ -8,9 +8,12 @@ import (
 	"log"
 	"tgnotifyhub/api"
 	"tgnotifyhub/config"
+	"tgnotifyhub/formatters"
 	"tgnotifyhub/telegram"
 	"time"
 )
+
+const pluginsPath = "./plugins"
 
 func main() {
 	configFile := flag.String("s", "settings.json", "Path to settings.json")
@@ -30,6 +33,11 @@ func main() {
 	t, _ := telegram.CreateTopics(config.Loaded().Topics, config.Loaded().ChatId)
 	// save topics with ids
 	if err := config.UpdateTopics(t, *configFile); err != nil {
+		log.Panic(err)
+	}
+
+	// load formatter plugins
+	if err := formatters.LoadPluginsFromFolder(pluginsPath); err != nil {
 		log.Panic(err)
 	}
 
