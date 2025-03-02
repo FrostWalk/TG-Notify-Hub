@@ -9,6 +9,7 @@ import (
 	"strings"
 )
 
+// normal maps are safe for concurrent read access
 var loadedPlugins = make(map[string]Formatter)
 
 func loadPlugin(path string) (Formatter, error) {
@@ -32,6 +33,7 @@ func loadPlugin(path string) (Formatter, error) {
 	return plug, nil
 }
 
+// LoadPluginsFromFolder load all the .so file present in the folder and map each of them to his slug
 func LoadPluginsFromFolder(folder string) error {
 	err := ensureFolderExists(folder)
 	if err != nil {
@@ -63,8 +65,8 @@ func LoadPluginsFromFolder(folder string) error {
 	return nil
 }
 
-// GetPlugin retrieves a loaded plugin by its slug.
-func GetPlugin(slug string) (bool, Formatter) {
+// GetPluginFromSlug retrieves a loaded plugin by its slug.
+func GetPluginFromSlug(slug string) (bool, Formatter) {
 	plug, ok := loadedPlugins[slug]
 	return ok, plug
 }

@@ -3,14 +3,13 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/etkecc/go-healthchecks/v2"
 	"github.com/gin-gonic/gin"
 	"log"
 	"tgnotifyhub/api"
 	"tgnotifyhub/config"
 	"tgnotifyhub/formatters"
+	"tgnotifyhub/healtcheck"
 	"tgnotifyhub/telegram"
-	"time"
 )
 
 const pluginsPath = "./plugins"
@@ -29,10 +28,22 @@ func main() {
 		log.Panic(err)
 	}
 
+	if config.Loaded().ChatId == 0 {
+		id, err := telegram.GetGroupId()
+		if err != nil {
+			log.Panic(err)
+		}
+
+		err = config.SetGroupId(id)
+		if err != nil {
+			log.Panic(err)
+		}
+	}
+
 	// crate new topics
 	t, _ := telegram.CreateTopics(config.Loaded().Topics, config.Loaded().ChatId)
 	// save topics with ids
-	if err := config.UpdateTopics(t, *configFile); err != nil {
+	if err := config.UpdateTopics(t); err != nil {
 		log.Panic(err)
 	}
 
@@ -41,11 +52,9 @@ func main() {
 		log.Panic(err)
 	}
 
-	if config.Loaded().HealthCheckUuid != "" {
-		client := healthchecks.New(healthchecks.WithCheckUUID(config.Loaded().HealthCheckUuid))
-		defer client.Shutdown()
-
-		go client.Auto(time.Duration(config.Loaded().PingInterval) * time.Second)
+	if uuid := config.Loaded().HealthCheckUuid; uuid != "" {
+		healtcheck.EnableCheck(uuid, config.Loaded().PingInterval)
+		defer healtcheck.CloseConnection()
 	}
 
 	gin.SetMode(gin.ReleaseMode)

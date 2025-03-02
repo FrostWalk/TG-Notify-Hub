@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"strings"
 	"tgnotifyhub/config"
+	"tgnotifyhub/healtcheck"
 	"tgnotifyhub/markdown"
 	"tgnotifyhub/telegram"
 )
@@ -18,10 +19,12 @@ func Send(c *gin.Context) {
 	if err != nil {
 		err = telegram.SendMessageToGeneral(config.Loaded().ChatId, formatError(err))
 		if err != nil {
+			healtcheck.SignalError(err)
 			log.Println(err)
 		}
 
 		log.Println(err)
+		healtcheck.SignalError(err)
 		c.Status(http.StatusInternalServerError)
 		return
 	}
@@ -30,13 +33,14 @@ func Send(c *gin.Context) {
 	if !strings.Contains(c.GetHeader("Content-Type"), "json") {
 		body = markdown.Escape(string(bodyBytes))
 	} else {
-		body = fmt.Sprintf("```\n%s```", string(bodyBytes))
+		body = fmt.Sprintf("```\n%s\n```", string(bodyBytes))
 	}
 
 	if topicName == "" {
 		err = telegram.SendMessageToGeneral(config.Loaded().ChatId, body)
 		if err != nil {
 			log.Println(err)
+			healtcheck.SignalError(err)
 			c.Status(http.StatusInternalServerError)
 			return
 		}

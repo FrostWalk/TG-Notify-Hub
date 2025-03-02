@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log"
 	"os"
+	"strings"
 	"sync"
 )
 
@@ -30,17 +31,25 @@ var (
 	mu sync.RWMutex
 	// topicNameChatIds contains the association between slugs and chat ids
 	topicNameChatIds sync.Map
+	filePath         string
 )
 
 // Load attempts to read the configuration from the provided file path.
 // If the file does not exist, it creates a default configuration file, logs the event,
 // and exits the application.
 func Load(path string) error {
+	filePath = path
 	// Check if the file exists.
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		// Create a default configuration.
 		defaultConfig := AppConfig{
-			Port: 8080,
+			Token:           "",
+			ChatId:          0,
+			Port:            8080,
+			HealthCheckUuid: "",
+			PingInterval:    0,
+			AuthHeader:      "",
+			AuthToken:       "",
 			Topics: []Topic{
 				{
 					Name: "",
@@ -60,7 +69,8 @@ func Load(path string) error {
 		}
 
 		// Log that the config file was created and exit the application.
-		log.Printf("Configuration file not found. A default config file has been created at %s. Please update it as needed and restart the application.", path)
+		log.Printf("Configuration file not found. A default config file has been created at %s."+
+			" Please update it as needed and restart the application.", path)
 		os.Exit(0)
 	}
 
@@ -82,7 +92,7 @@ func Load(path string) error {
 	mu.Unlock()
 
 	for _, topic := range cfg.Topics {
-		topicNameChatIds.Store(topic.Name, topic.Id)
+		topicNameChatIds.Store(strings.ToLower(topic.Name), topic.Id)
 	}
 
 	return nil
@@ -107,14 +117,14 @@ func Loaded() *AppConfig {
 	return instance
 }
 
-func UpdateTopics(t []Topic, f string) error {
+func UpdateTopics(t []Topic) error {
 	instance.Topics = t
 
 	for _, topic := range t {
-		topicNameChatIds.Store(topic.Name, topic.Id)
+		topicNameChatIds.Store(strings.ToLower(topic.Name), topic.Id)
 	}
 
-	return saveConfig(f)
+	return saveConfig(filePath)
 }
 
 func GetIdFromName(name string) (bool, int) {
@@ -123,4 +133,9 @@ func GetIdFromName(name string) (bool, int) {
 		return false, -1
 	}
 	return ok, id.(int)
+}
+
+func SetGroupId(id int64) error {
+	instance.ChatId = id
+	return saveConfig(filePath)
 }
